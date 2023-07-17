@@ -1,0 +1,20 @@
+[package]
+name = "lineriver"
+description = "Non-blocking buffered line reader for Read objects"
+version = "0.1.0"
+authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
+edition = "2021"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/lpenz/lineriver"
+repository = "https://github.com/lpenz/lineriver"
+categories = ["filesystem"]
+keywords = ["io", "non-blocking"]
+
+
+[dependencies]
+libc = "0.2.147"
+memchr = "2.5.0"
+
+[build-dependencies]
+color-eyre = "0.6.2"
