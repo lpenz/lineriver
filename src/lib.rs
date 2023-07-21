@@ -11,7 +11,7 @@ mod blocking;
 #[derive(Debug)]
 pub struct LineReaderNonBlock<R: AsRawFd + Read> {
     reader: R,
-    eof_: bool,
+    at_eof: bool,
     buf: Vec<u8>,
     used: usize,
     lines: Vec<String>,
@@ -23,7 +23,7 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
         blocking::disable(fd)?;
         Ok(Self {
             reader,
-            eof_: false,
+            at_eof: false,
             buf: Default::default(),
             used: 0,
             lines: Default::default(),
@@ -31,7 +31,7 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
     }
 
     pub fn eof(&self) -> bool {
-        self.eof_
+        self.at_eof
     }
 
     fn u8array_to_string(buf: &[u8]) -> Result<String, io::Error> {
@@ -60,7 +60,7 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
     }
 
     pub fn read_once(&mut self) -> Result<bool, io::Error> {
-        if self.eof_ {
+        if self.at_eof {
             return Ok(false);
         }
         if self.buf.len() < self.used + 1024 {
@@ -77,7 +77,7 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
                     self.lines.push(Self::u8array_to_string(&lastline)?);
                     self.used = 0;
                 }
-                self.eof_ = true;
+                self.at_eof = true;
             }
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 // No data availble, just let the function return
