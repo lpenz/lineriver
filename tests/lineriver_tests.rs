@@ -56,7 +56,7 @@ fn test_twoline() -> Result<()> {
 #[test]
 fn test_threeline() -> Result<()> {
     let mut reader = reader_for(b"1\n\n3\n")?;
-    // We only need onw read_available to find eof
+    // We only need one read_available to find eof
     reader.read_available()?;
     assert_eq!(reader.lines_get(), vec!["1\n", "\n", "3\n"]);
     Ok(())
