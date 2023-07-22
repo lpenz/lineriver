@@ -1,7 +1,3 @@
-// Copyright (C) 2023 Leandro Lisboa Penz <lpenz@lpenz.org>
-// This file is subject to the terms and conditions defined in
-// file 'LICENSE', which is part of this source code package.
-
 use polling::{Event, Poller};
 use std::collections::HashMap;
 use std::net::TcpListener;

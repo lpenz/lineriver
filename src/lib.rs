@@ -2,113 +2,70 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-use std::io::{self, Read};
-use std::os::fd::AsRawFd;
-use std::{mem, str};
+//! **linereader** is a rust crate that provides a non-blocking buffered line
+//! reader for [Read] objects.
+//!
+//! The [`LineReaderNonBlock`] object is akin to a [BufReader] object
+//! that returns only complete lines, but without blocking. It also
+//! implements the [BufRead] trait, but deviates from it by not
+//! blocking in [`read_line`], and allowing it to be called multiple
+//! times.
+//!
+//! This crate works very well with the [polling] crate, which allows
+//! us to block waiting on data to be available in any one of multiple
+//! streams (files, sockets, etc.). It's an alternative to using
+//! threads and/or [tokio].
+//!
+//! See [`LineReaderNonBlock`] for details.
+//!
+//! # Usage
+//!
+//! The simplest way to explain how to use `LineReaderNonBlock` is
+//! with a busy-loop example:
+//!
+//! ```
+//! # use std::io::Write;
+//! # use std::os::unix::net::UnixStream;
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! #    let (mut writer, reader) = UnixStream::pair()?;
+//! #    writer.write_all(b"test\n")?;
+//! #    writer.flush()?;
+//! #    drop(writer);
+//! use lineriver::LineReaderNonBlock;
+//!
+//! let mut linereader = LineReaderNonBlock::new(reader)?;
+//! while !linereader.eof() {
+//!     linereader.read_available()?;
+//!     let lines = linereader.lines_get();
+//!     for line in lines {
+//!         print!("{}", line);
+//!     }
+//! }
+//! #    Ok(())
+//! # }
+//! ```
+//!
+//! # Examples
+//!
+//! ## `tcp_line_echo.rs`
+//!
+//! The following example is a full TCP server that prints all lines
+//! received from clients, using the [polling] crate to do so
+//! efficiently:
+//!
+//! ```no_run
+#![doc = include_str!("../examples/tcp_line_echo.rs")]
+//! ```
+//!
+//! [Read]: https://doc.rust-lang.org/std/io/trait.Read.html
+//! [BufReader]: https://doc.rust-lang.org/std/io/struct.BufReader.html
+//! [BufRead]: https://doc.rust-lang.org/std/io/trait.BufRead.html
+//! [`read_line`]: https://doc.rust-lang.org/std/io/trait.BufRead.html#method.read_line
+//! [polling]: https://docs.rs/polling/latest/polling/index.html
+//! [tokio]: https://tokio.rs/
+//! [github]: https://github.com/lpenz/lineriver
+//! [`tcp_line_echo`]: https://github.com/lpenz/lineriver/blob/main/examples/tcp_line_echo.rs
 
 mod blocking;
-
-#[derive(Debug)]
-pub struct LineReaderNonBlock<R: AsRawFd + Read> {
-    reader: R,
-    at_eof: bool,
-    buf: Vec<u8>,
-    used: usize,
-    lines: Vec<String>,
-}
-
-impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
-    pub fn new(reader: R) -> Result<Self, io::Error> {
-        let fd = reader.as_raw_fd();
-        blocking::disable(fd)?;
-        Ok(Self {
-            reader,
-            at_eof: false,
-            buf: Default::default(),
-            used: 0,
-            lines: Default::default(),
-        })
-    }
-
-    pub fn eof(&self) -> bool {
-        self.at_eof
-    }
-
-    fn u8array_to_string(buf: &[u8]) -> Result<String, io::Error> {
-        match str::from_utf8(buf) {
-            Ok(line) => Ok(line.to_string()),
-            Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
-        }
-    }
-
-    fn eval_buf(&mut self, mut pos: usize) -> Result<(), io::Error> {
-        loop {
-            if let Some(inewline) = memchr::memchr(b'\n', &self.buf[pos..self.used]) {
-                // Found a newline.
-                let mut line = self.buf.split_off(pos + inewline + 1);
-                self.used -= pos + inewline + 1;
-                // They are swapped at the moment, unswap:
-                mem::swap(&mut self.buf, &mut line);
-                // Convert line to string and append to self.lines:
-                self.lines.push(Self::u8array_to_string(&line)?);
-                pos = 0;
-            } else {
-                // No newline read.
-                return Ok(());
-            }
-        }
-    }
-
-    pub fn read_once(&mut self) -> Result<bool, io::Error> {
-        if self.at_eof {
-            return Ok(false);
-        }
-        if self.buf.len() < self.used + 1024 {
-            self.buf.resize(self.used + 1024, 0);
-        }
-        let oldused = self.used;
-        let buf = self.buf.as_mut_slice();
-        let r = self.reader.read(&mut buf[self.used..]);
-        match r {
-            Ok(0) => {
-                if self.used > 0 {
-                    let mut lastline = mem::take(&mut self.buf);
-                    lastline.truncate(self.used);
-                    self.lines.push(Self::u8array_to_string(&lastline)?);
-                    self.used = 0;
-                }
-                self.at_eof = true;
-            }
-            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                // No data availble, just let the function return
-            }
-            Err(ref err) if err.kind() == io::ErrorKind::Interrupted => {
-                // Interrupted, just let the function return
-            }
-            Ok(len) => {
-                self.used += len;
-                // Look for newlines from "oldused" forward:
-                self.eval_buf(oldused)?;
-            }
-            Err(err) => {
-                return Err(err);
-            }
-        }
-        Ok(true)
-    }
-
-    pub fn read_available(&mut self) -> Result<(), io::Error> {
-        while self.read_once()? {}
-        Ok(())
-    }
-
-    pub fn lines_get(&mut self) -> Vec<String> {
-        mem::take(&mut self.lines)
-    }
-}
-
-impl<R: AsRawFd + Read> AsRawFd for LineReaderNonBlock<R> {
-    fn as_raw_fd(&self) -> std::os::fd::RawFd {
-        self.reader.as_raw_fd()
-    }
-}
+pub mod line_reader_nonblock;
+pub use self::line_reader_nonblock::*;
