@@ -97,7 +97,18 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
         Ok(true)
     }
 
+    pub fn read_available(&mut self) -> Result<(), io::Error> {
+        while self.read_once()? {}
+        Ok(())
+    }
+
     pub fn lines_get(&mut self) -> Vec<String> {
         mem::take(&mut self.lines)
+    }
+}
+
+impl<R: AsRawFd + Read> AsRawFd for LineReaderNonBlock<R> {
+    fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.reader.as_raw_fd()
     }
 }

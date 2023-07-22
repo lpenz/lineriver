@@ -45,8 +45,10 @@ fn test_twoline() -> Result<()> {
     let mut reader = reader_for(b"1\n2\n")?;
     // First read_once gets the string.
     reader.read_once()?;
+    assert!(!reader.eof());
     // Second read_once finds eof.
     reader.read_once()?;
+    assert!(reader.eof());
     assert_eq!(reader.lines_get(), vec!["1\n", "2\n"]);
     Ok(())
 }
@@ -54,10 +56,8 @@ fn test_twoline() -> Result<()> {
 #[test]
 fn test_threeline() -> Result<()> {
     let mut reader = reader_for(b"1\n\n3\n")?;
-    // First read_once gets the string.
-    reader.read_once()?;
-    // Second read_once finds eof.
-    reader.read_once()?;
+    // We only need onw read_available to find eof
+    reader.read_available()?;
     assert_eq!(reader.lines_get(), vec!["1\n", "\n", "3\n"]);
     Ok(())
 }
