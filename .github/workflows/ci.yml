@@ -11,3 +11,6 @@ jobs:
     uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.15.0
     with:
       coveralls: true
+      publish_cratesio: true
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
