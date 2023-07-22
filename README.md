@@ -1,5 +1,7 @@
 [![CI](https://github.com/lpenz/lineriver/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/lineriver/actions/workflows/ci.yml)
 [![coveralls](https://coveralls.io/repos/github/lpenz/lineriver/badge.svg?branch=main)](https://coveralls.io/github/lpenz/lineriver?branch=main)
+[![crates.io](https://img.shields.io/crates/v/lineriver)](https://crates.io/crates/lineriver)
+[![doc.rs](https://docs.rs/lineriver/badge.svg)](https://docs.rs/lineriver)
 
 # lineriver
 
@@ -45,8 +47,6 @@ while !linereader.eof() {
 [tokio]: https://tokio.rs/
 [github]: https://github.com/lpenz/lineriver
 [`tcp_line_echo`]: https://github.com/lpenz/lineriver/blob/main/examples/tcp_line_echo.rs
-
-
-
 [Read]: https://doc.rust-lang.org/std/io/trait.Read.html
 [BufReader]: https://doc.rust-lang.org/std/io/struct.BufReader.html
+[`LineReaderNonBlock`]: https://docs.rs/lineriver/latest/lineriver/line_reader_nonblock/struct.LineReaderNonBlock.html
