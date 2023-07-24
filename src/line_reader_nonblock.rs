@@ -14,7 +14,7 @@ const BUFFER_SIZE: usize = 8192;
 
 /// Buffered non-blocking reader that returns only complete lines.
 #[derive(Debug)]
-pub struct LineReaderNonBlock<R: AsRawFd + Read> {
+pub struct LineReaderNonBlock<R> {
     reader: R,
     at_eof: bool,
     buf: Vec<u8>,
@@ -29,11 +29,28 @@ fn u8array_to_string(buf: &[u8]) -> Result<String, io::Error> {
     }
 }
 
-impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
-    /// Creates a new LineReaderNonBlock.
+impl<R: Read + AsRawFd> LineReaderNonBlock<R> {
+    /// Creates a new LineReaderNonBlock, setting the underlying
+    /// descriptor as non-blocking.
     pub fn new(reader: R) -> Result<Self, io::Error> {
         let fd = reader.as_raw_fd();
         blocking::disable(fd)?;
+        Ok(Self {
+            reader,
+            at_eof: false,
+            buf: Default::default(),
+            used: 0,
+            lines: Default::default(),
+        })
+    }
+}
+
+impl<R: Read> LineReaderNonBlock<R> {
+    /// Creates a new LineReaderNonBlock.
+    ///
+    /// Assumes the reader is already non-blocking, not configuring
+    /// anything in the underlying descriptor.
+    pub fn from_nonblocking(reader: R) -> Result<Self, io::Error> {
         Ok(Self {
             reader,
             at_eof: false,
@@ -139,7 +156,7 @@ impl<R: AsRawFd + Read> LineReaderNonBlock<R> {
     }
 }
 
-impl<R: AsRawFd + Read> AsRawFd for LineReaderNonBlock<R> {
+impl<R: AsRawFd> AsRawFd for LineReaderNonBlock<R> {
     fn as_raw_fd(&self) -> std::os::fd::RawFd {
         self.reader.as_raw_fd()
     }
