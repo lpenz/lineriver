@@ -2,19 +2,20 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-//! This module has the main type of this crate: [`LineReaderNonBlock`]
+//! This module has the main type of this crate: [`LineReader`].
 
 use std::io::{self, Read};
 use std::os::fd::AsRawFd;
 use std::{mem, str};
 
 use crate::blocking;
+use crate::lineread::LineRead;
 
 const BUFFER_SIZE: usize = 8192;
 
 /// Buffered non-blocking reader that returns only complete lines.
 #[derive(Debug)]
-pub struct LineReaderNonBlock<R> {
+pub struct LineReader<R> {
     reader: R,
     at_eof: bool,
     buf: Vec<u8>,
@@ -29,8 +30,8 @@ fn u8array_to_string(buf: &[u8]) -> Result<String, io::Error> {
     }
 }
 
-impl<R: Read + AsRawFd> LineReaderNonBlock<R> {
-    /// Creates a new LineReaderNonBlock, setting the underlying
+impl<R: Read + AsRawFd> LineReader<R> {
+    /// Creates a new LineReader, setting the underlying
     /// descriptor as non-blocking.
     pub fn new(reader: R) -> Result<Self, io::Error> {
         let fd = reader.as_raw_fd();
@@ -45,8 +46,8 @@ impl<R: Read + AsRawFd> LineReaderNonBlock<R> {
     }
 }
 
-impl<R: Read> LineReaderNonBlock<R> {
-    /// Creates a new LineReaderNonBlock.
+impl<R: Read> LineReader<R> {
+    /// Creates a new LineReader.
     ///
     /// Assumes the reader is already non-blocking, not configuring
     /// anything in the underlying descriptor.
@@ -58,19 +59,6 @@ impl<R: Read> LineReaderNonBlock<R> {
             used: 0,
             lines: Default::default(),
         })
-    }
-
-    /// Returns true if we have already reached EOF in the underlying
-    /// `Read` object.
-    ///
-    /// Once this function returns true, `read_once` and
-    /// `read_available` stop having any effect, they return
-    /// immediately.
-    ///
-    /// The buffer may have complete lines, so a last call to
-    /// `lines_get` is recommended.
-    pub fn eof(&self) -> bool {
-        self.at_eof
     }
 
     fn eval_buf(&mut self, mut pos: usize) -> Result<(), io::Error> {
@@ -90,18 +78,20 @@ impl<R: Read> LineReaderNonBlock<R> {
             }
         }
     }
+}
 
-    /// Performs a single read operation on the underlying `Read`
-    /// object.
-    ///
-    /// Returns `Ok(true)` if we have already reached EOF,
-    /// `Ok(false)` if we have not. That doesn't mean that there is
-    /// more data available to read immediately, it just means that
-    /// the file descriptor is still open.
-    ///
-    /// This function can also return an [`std::io::Error`] if one is
-    /// found, or if an invalid UTF-8 sequence is read.
-    pub fn read_once(&mut self) -> Result<bool, io::Error> {
+impl<R: AsRawFd> AsRawFd for LineReader<R> {
+    fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.reader.as_raw_fd()
+    }
+}
+
+impl<R: Read> LineRead for crate::LineReader<R> {
+    fn eof(&self) -> bool {
+        self.at_eof
+    }
+
+    fn read_once(&mut self) -> Result<bool, io::Error> {
         if self.at_eof {
             return Ok(false);
         }
@@ -139,25 +129,7 @@ impl<R: Read> LineReaderNonBlock<R> {
         Ok(true)
     }
 
-    /// Reads all available data into the internal line buffer.
-    ///
-    /// This method just calls [`Self::read_once`] until it returns `false`.
-    pub fn read_available(&mut self) -> Result<(), io::Error> {
-        while self.read_once()? {}
-        Ok(())
-    }
-
-    /// Returns the internal line buffer.
-    ///
-    /// This method transfers ownership of the buffer to the caller,
-    /// effectively clearing the internal buffer.
-    pub fn lines_get(&mut self) -> Vec<String> {
+    fn lines_get(&mut self) -> Vec<String> {
         mem::take(&mut self.lines)
-    }
-}
-
-impl<R: AsRawFd> AsRawFd for LineReaderNonBlock<R> {
-    fn as_raw_fd(&self) -> std::os::fd::RawFd {
-        self.reader.as_raw_fd()
     }
 }

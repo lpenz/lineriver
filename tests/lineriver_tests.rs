@@ -8,14 +8,14 @@ use std::os::unix::net::UnixStream;
 
 use color_eyre::Result;
 
-use lineriver::*;
+use ::lineriver::*;
 
 const SPARKLE_HEART: [u8; 4] = [240, 159, 146, 150];
 const INVALID_UTF8: [u8; 4] = [0, 159, 146, 150];
 
-fn reader_for(input: &[u8]) -> Result<LineReaderNonBlock<UnixStream>> {
+fn reader_for(input: &[u8]) -> Result<LineReader<UnixStream>> {
     let (mut wr, rd) = std::os::unix::net::UnixStream::pair()?;
-    let reader = LineReaderNonBlock::new(rd)?;
+    let reader = LineReader::new(rd)?;
     wr.write_all(input)?;
     wr.flush()?;
     Ok(reader)
@@ -120,7 +120,7 @@ fn test_invalid_utf8() -> Result<()> {
 #[test]
 fn test_addlines() -> Result<()> {
     let (mut wr, rd) = std::os::unix::net::UnixStream::pair()?;
-    let mut reader = LineReaderNonBlock::new(rd)?;
+    let mut reader = LineReader::new(rd)?;
     reader.read_once()?;
     assert!(reader.lines_get().is_empty());
     wr.write_all(b"1\n2")?;

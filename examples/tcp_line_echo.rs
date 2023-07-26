@@ -1,3 +1,4 @@
+use lineriver::LineRead;
 use polling::{Event, Poller};
 use std::collections::HashMap;
 use std::net::TcpListener;
@@ -22,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let (client, addr) = listener.accept()?;
                 eprintln!("{}: connected", addr);
                 // Add client to list.
-                let client_reader = lineriver::LineReaderNonBlock::new(client)?;
+                let client_reader = lineriver::LineReader::new(client)?;
                 poller.add(&client_reader, Event::readable(next_key))?;
                 clients.insert(next_key, (addr, client_reader));
                 next_key += 1;
