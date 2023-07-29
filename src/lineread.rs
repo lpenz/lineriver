@@ -5,8 +5,10 @@
 //! This module has the generic trait [`LineRead`].
 
 use std::io;
+use std::os::fd::AsRawFd;
 
-/// Generic trait implemented by all `LineReader<R>`.
+/// Trait for buffered non-blocking readeres that return only complete
+/// lines.
 ///
 /// This trait can be used to create a collection of LineReaders that
 /// use different underlying types, by using trait objects.
@@ -48,3 +50,10 @@ pub trait LineRead {
     /// effectively clearing the internal buffer.
     fn lines_get(&mut self) -> Vec<String>;
 }
+
+/// Trait for buffered non-blocking readeres that return only complete
+/// lines and is backed by an entity that has a file descriptor.
+///
+/// This trait can be used to create a collection of LineReaders that
+/// use different underlying types, by using trait objects.
+pub trait LineReadFd: LineRead + AsRawFd {}

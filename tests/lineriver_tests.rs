@@ -5,8 +5,10 @@
 use std::io::Write;
 use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
+use std::process::Command;
+use std::process::Stdio;
 
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 
 use ::lineriver::*;
 
@@ -138,5 +140,39 @@ fn test_addlines() -> Result<()> {
     assert!(!reader.read_once()?);
     assert!(reader.eof());
     let _ = format!("{:?}", reader);
+    Ok(())
+}
+
+#[test]
+fn test_trat_reader() -> Result<()> {
+    let array = "abcdefgh".as_bytes();
+    let linereader = LineReader::from_nonblocking(array)?;
+    let _traitobj = &linereader as &dyn LineRead;
+    Ok(())
+}
+
+#[test]
+fn test_trat_readerfd() -> Result<()> {
+    let mut child = Command::new("true")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let stdout = LineReader::new(
+        child
+            .stdout
+            .take()
+            .ok_or_else(|| eyre!("error taking stdout"))?,
+    )?;
+    let stderr = LineReader::new(
+        child
+            .stderr
+            .take()
+            .ok_or_else(|| eyre!("error taking stderr"))?,
+    )?;
+    let linereaders = vec![&stdout as &dyn LineReadFd, &stderr as &dyn LineReadFd];
+    let _fds = linereaders
+        .iter()
+        .map(|s| s.as_raw_fd())
+        .collect::<Vec<_>>();
     Ok(())
 }

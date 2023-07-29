@@ -9,7 +9,7 @@ use std::os::fd::AsRawFd;
 use std::{mem, str};
 
 use crate::blocking;
-use crate::lineread::LineRead;
+use crate::lineread::{LineRead, LineReadFd};
 
 const BUFFER_SIZE: usize = 8192;
 
@@ -80,12 +80,6 @@ impl<R: Read> LineReader<R> {
     }
 }
 
-impl<R: AsRawFd> AsRawFd for LineReader<R> {
-    fn as_raw_fd(&self) -> std::os::fd::RawFd {
-        self.reader.as_raw_fd()
-    }
-}
-
 impl<R: Read> LineRead for crate::LineReader<R> {
     fn eof(&self) -> bool {
         self.at_eof
@@ -133,3 +127,11 @@ impl<R: Read> LineRead for crate::LineReader<R> {
         mem::take(&mut self.lines)
     }
 }
+
+impl<R: AsRawFd> AsRawFd for LineReader<R> {
+    fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.reader.as_raw_fd()
+    }
+}
+
+impl<R: AsRawFd + Read> LineReadFd for LineReader<R> {}
