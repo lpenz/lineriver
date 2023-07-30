@@ -15,6 +15,7 @@ use ::lineriver::*;
 const SPARKLE_HEART: [u8; 4] = [240, 159, 146, 150];
 const INVALID_UTF8: [u8; 4] = [0, 159, 146, 150];
 
+#[tracing::instrument(skip(input))]
 fn reader_for(input: &[u8]) -> Result<LineReader<UnixStream>> {
     let (mut wr, rd) = std::os::unix::net::UnixStream::pair()?;
     let reader = LineReader::new(rd)?;
@@ -23,7 +24,7 @@ fn reader_for(input: &[u8]) -> Result<LineReader<UnixStream>> {
     Ok(reader)
 }
 
-#[test]
+#[test_log::test]
 fn test_oneline_newline() -> Result<()> {
     let mut reader = reader_for(b"test\n")?;
     reader.read_once()?;
@@ -31,7 +32,7 @@ fn test_oneline_newline() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_oneline_nonewline() -> Result<()> {
     let mut reader = reader_for(b"test")?;
     // First read_once gets the string.
@@ -42,7 +43,7 @@ fn test_oneline_nonewline() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_twoline() -> Result<()> {
     let mut reader = reader_for(b"1\n2\n")?;
     // First read_once gets the string.
@@ -55,7 +56,7 @@ fn test_twoline() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_threeline() -> Result<()> {
     let mut reader = reader_for(b"1\n\n3\n")?;
     // We only need one read_available to find eof
@@ -64,7 +65,7 @@ fn test_threeline() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_empty() -> Result<()> {
     let mut reader = reader_for(b"")?;
     reader.read_once()?;
@@ -72,7 +73,7 @@ fn test_empty() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_empty_line() -> Result<()> {
     let mut reader = reader_for(b"\n")?;
     reader.read_once()?;
@@ -80,7 +81,7 @@ fn test_empty_line() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_read_past_end() -> Result<()> {
     let mut reader = reader_for(b"")?;
     for _ in 0..10 {
@@ -91,7 +92,7 @@ fn test_read_past_end() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_utf8() -> Result<()> {
     let heart = format!("\n{}\n\n", std::str::from_utf8(&SPARKLE_HEART)?);
     let mut reader = reader_for(heart.as_bytes())?;
@@ -107,7 +108,7 @@ fn test_utf8() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_invalid_utf8() -> Result<()> {
     let mut invalid = Vec::from(INVALID_UTF8);
     invalid.push(b'\n');
@@ -119,7 +120,7 @@ fn test_invalid_utf8() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_addlines() -> Result<()> {
     let (mut wr, rd) = std::os::unix::net::UnixStream::pair()?;
     let mut reader = LineReader::new(rd)?;
@@ -143,7 +144,7 @@ fn test_addlines() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_trat_reader() -> Result<()> {
     let array = "abcdefgh".as_bytes();
     let linereader = LineReader::from_nonblocking(array)?;
@@ -151,7 +152,7 @@ fn test_trat_reader() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[test_log::test]
 fn test_trat_readerfd() -> Result<()> {
     let mut child = Command::new("true")
         .stdout(Stdio::piped())

@@ -3,9 +3,11 @@
 // file 'LICENSE', which is part of this source code package.
 
 use libc::{F_GETFL, F_SETFL, O_NONBLOCK};
+use std::fmt::Debug;
 use std::io;
 use std::os::fd::AsRawFd;
 
+#[tracing::instrument]
 fn fcntl(
     fd: std::os::fd::RawFd,
     cmd: libc::c_int,
@@ -18,7 +20,8 @@ fn fcntl(
     Ok(result)
 }
 
-pub fn disable<R: AsRawFd>(reader: R) -> Result<(), io::Error> {
+#[tracing::instrument]
+pub fn disable<R: AsRawFd + Debug>(reader: R) -> Result<(), io::Error> {
     let fd = reader.as_raw_fd();
     let flags = fcntl(fd, F_GETFL, 0)?;
     fcntl(fd, F_SETFL, flags | O_NONBLOCK)?;
