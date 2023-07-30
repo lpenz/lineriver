@@ -1,7 +1,7 @@
 [package]
 name = "lineriver"
 description = "Non-blocking buffered line reader for Read objects"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2021"
 license = "MIT"
