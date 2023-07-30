@@ -40,6 +40,8 @@ while !linereader.eof() {
 }
 ```
 
+[`LineReader`]: https://docs.rs/lineriver/latest/lineriver/linereader/struct.LineReader.html
+[`LineRead`]: https://docs.rs/lineriver/latest/lineriver/lineread/trait.LineRead.html
 [`Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
 [`BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
 [`BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
