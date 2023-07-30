@@ -134,6 +134,11 @@ impl<R: Read + Debug> LineRead for crate::LineReader<R> {
     fn lines_get(&mut self) -> Vec<String> {
         mem::take(&mut self.lines)
     }
+
+    #[tracing::instrument(skip(self),fields(self.at_eof = %self.at_eof, self.num_lines=self.lines.len()))]
+    fn has_lines(&mut self) -> bool {
+        !self.lines.is_empty()
+    }
 }
 
 impl<R: AsRawFd> AsRawFd for LineReader<R> {

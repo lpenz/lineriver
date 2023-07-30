@@ -36,11 +36,13 @@ pub trait LineRead {
     /// found, or if an invalid UTF-8 sequence is read.
     fn read_once(&mut self) -> Result<bool, io::Error>;
 
-    /// Reads all available data into the internal line buffer.
+    /// Reads all available data into the internal line buffer, or at
+    /// least until a complete line is available.
     ///
-    /// This method just calls [`Self::read_once`] until it returns `false`.
+    /// This method just calls [`Self::read_once`] until it returns
+    /// `false` or [`Self::has_lines`] returns `true`.
     fn read_available(&mut self) -> Result<(), io::Error> {
-        while self.read_once()? {}
+        while self.read_once()? && !self.has_lines() {}
         Ok(())
     }
 
@@ -49,6 +51,12 @@ pub trait LineRead {
     /// This method transfers ownership of the buffer to the caller,
     /// effectively clearing the internal buffer.
     fn lines_get(&mut self) -> Vec<String>;
+
+    /// Returns `true` if there are complete lines in the internal buffer.
+    ///
+    /// If this returns `true`, [`Self::lines_get`] won't return an
+    /// empty vector.
+    fn has_lines(&mut self) -> bool;
 }
 
 /// Trait for buffered non-blocking readeres that return only complete
