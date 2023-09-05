@@ -6,7 +6,7 @@
 
 use std::fmt::Debug;
 use std::io::{self, Read};
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd};
 use std::{mem, str};
 
 use crate::blocking;
@@ -148,3 +148,9 @@ impl<R: AsRawFd> AsRawFd for LineReader<R> {
 }
 
 impl<R: AsRawFd + Read + Debug> LineReadFd for LineReader<R> {}
+
+impl<R: AsFd> AsFd for LineReader<R> {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.reader.as_fd()
+    }
+}

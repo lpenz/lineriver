@@ -1,5 +1,5 @@
 use lineriver::LineRead;
-use polling::{Event, Poller};
+use polling::{Event, Events, Poller};
 use std::collections::HashMap;
 use std::net::TcpListener;
 
@@ -10,21 +10,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener_key = 0;
     // Create poller, register interest in listener:
     let poller = Poller::new()?;
-    poller.add(&listener, Event::readable(listener_key))?;
-    let mut events = Vec::new();
+    unsafe {
+        poller.add(&listener, Event::readable(listener_key))?;
+    };
+    let mut events = Events::new();
     let mut clients = HashMap::new();
     let mut next_key = listener_key + 1;
     loop {
         events.clear();
         poller.wait(&mut events, None)?;
-        for ev in &events {
+        for ev in events.iter() {
             if ev.key == listener_key {
                 // Perform a non-blocking accept operation.
                 let (client, addr) = listener.accept()?;
                 eprintln!("{}: connected", addr);
                 // Add client to list.
                 let client_reader = lineriver::LineReader::new(client)?;
-                poller.add(&client_reader, Event::readable(next_key))?;
+                unsafe {
+                    poller.add(&client_reader, Event::readable(next_key))?;
+                };
                 clients.insert(next_key, (addr, client_reader));
                 next_key += 1;
                 // Set interest in the next readability event from listener.
