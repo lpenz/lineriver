@@ -10,7 +10,7 @@ use std::os::fd::{AsFd, AsRawFd, BorrowedFd};
 use std::{mem, str};
 
 use crate::blocking;
-use crate::lineread::{LineRead, LineReadFd, LineReadRawFd};
+use crate::lineread::{LineRead, LineReadFd, LineReadRawAndFd, LineReadRawFd};
 
 const BUFFER_SIZE: usize = 8192;
 
@@ -156,3 +156,5 @@ impl<R: AsFd> AsFd for LineReader<R> {
 }
 
 impl<R: AsFd + Read + Debug> LineReadFd for LineReader<R> {}
+
+impl<R: AsFd + AsRawFd + Read + Debug> LineReadRawAndFd for LineReader<R> {}

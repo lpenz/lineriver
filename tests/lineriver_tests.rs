@@ -171,12 +171,21 @@ fn test_trat_readerfd() -> Result<()> {
             .take()
             .ok_or_else(|| eyre!("error taking stderr"))?,
     )?;
+    let linereaders = vec![
+        &stdout as &dyn LineReadRawAndFd,
+        &stderr as &dyn LineReadRawAndFd,
+    ];
+    let _rawfds1 = linereaders
+        .iter()
+        .map(|&s| s.as_raw_fd())
+        .collect::<Vec<_>>();
+    let _fds1 = linereaders.iter().map(|&s| s.as_fd()).collect::<Vec<_>>();
     let linereaders = vec![&stdout as &dyn LineReadRawFd, &stderr as &dyn LineReadRawFd];
-    let _rawfds = linereaders
+    let _rawfds2 = linereaders
         .iter()
         .map(|s| s.as_raw_fd())
         .collect::<Vec<_>>();
     let linereaders = vec![&stdout as &dyn LineReadFd, &stderr as &dyn LineReadFd];
-    let _fds = linereaders.iter().map(|s| s.as_fd()).collect::<Vec<_>>();
+    let _fds2 = linereaders.iter().map(|s| s.as_fd()).collect::<Vec<_>>();
     Ok(())
 }
