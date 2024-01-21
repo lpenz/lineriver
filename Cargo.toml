@@ -1,7 +1,7 @@
 [package]
 name = "lineriver"
 description = "Non-blocking buffered line reader for Read objects"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2021"
 license = "MIT"
@@ -13,13 +13,13 @@ keywords = ["io", "non-blocking"]
 
 
 [dependencies]
-libc = "0.2.147"
-memchr = "2.6.3"
-tracing = "0.1.37"
+libc = "0.2.153"
+memchr = "2.7.1"
+tracing = "0.1.40"
 
 [dev-dependencies]
 color-eyre = "0.6.2"
-polling = "3.0.0"
-env_logger = "0.10.0"
-test-log = { version = "0.2.12", features = ["trace"] }
+polling = "3.4.0"
+env_logger = "0.11.2"
+test-log = { version = "0.2.14", features = ["trace"] }
 tracing-subscriber = {version = "0.3", default-features = false, features = ["env-filter", "fmt"]}
