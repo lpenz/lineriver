@@ -8,7 +8,7 @@ use std::os::unix::net::UnixStream;
 use std::process::Command;
 use std::process::Stdio;
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 
 use ::lineriver::*;
 
